@@ -15,10 +15,10 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-Router.get("/", authenticateToken, findAll);
-Router.post("/", upload.single('file'), ProductValidation, save);
-Router.get("/:id", findById); 
-Router.delete("/:id", deleteById);
-Router.put("/:id", update);
+Router.get("/", findAll);
+Router.post("/",authenticateToken,upload.single('file'), ProductValidation, save);
+Router.get("/:id",authenticateToken,findById); 
+Router.delete("/:id",authenticateToken, deleteById);
+Router.put("/:id",authenticateToken, update);
 
 module.exports = Router;
