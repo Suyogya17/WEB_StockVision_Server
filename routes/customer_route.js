@@ -10,7 +10,4 @@ Router.get("/:id",findById);
 Router.delete("/:id",deleteById);
 Router.put("/:id",update);
 
-
-
-
 module.exports=Router;

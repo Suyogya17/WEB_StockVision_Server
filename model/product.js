@@ -17,12 +17,12 @@ const productSchema=new mongoose.Schema({
         type:String,
         require:true
     },
-    Quantity:{
-        type:String,
+    quantity:{
+        type:Number,
         require:true
     },
-    Price:{
-        type:String,
+    price:{
+        type:Number,
         require:true
     },
 
