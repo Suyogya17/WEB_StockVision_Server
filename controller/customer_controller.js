@@ -1,7 +1,8 @@
+const asyncHandler = require("../middleware/async");
 const Customer =require("../model/customer")
 const nodemailer = require ("nodemailer")
 
-const findAll = async (req, res)=> {
+const findAllCustomer = asyncHandler(async (req, res)=> {
     try{    
         const customer =await Customer.find();
         res.status(200).json(customer);
@@ -9,7 +10,7 @@ const findAll = async (req, res)=> {
     catch(e){
         res.status(500).json(e);
     }
-};
+});
 
 const save = async(req,res)=> {
     try{
@@ -35,7 +36,10 @@ const save = async(req,res)=> {
             <p>your user id is ${customer.id}</p>
             `
         })
-        res.status(201).json({customer,info});
+        res.status(201).json({
+            success:true,
+            data:
+            info});
     }catch(e) {
         res.status(500).json(e);
     }
@@ -76,7 +80,7 @@ const update = async (req, res) => {
 };
 
 module.exports={
-    findAll,
+    findAllCustomer,
     save,
     findById,
     deleteById,

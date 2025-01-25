@@ -1,5 +1,5 @@
 const express = require("express");
-const { findAll, save, findById, deleteById, update } = require("../controller/product_controller");
+const { getAllproduct, save, findById, deleteById, update } = require("../controller/product_controller");
 const Router = express.Router();
 const multer = require("multer");
 const ProductValidation = require("../validation/product_validation");
@@ -15,8 +15,8 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-Router.get("/", findAll);
-Router.post("/",authenticateToken,upload.single('file'), ProductValidation, save);
+Router.get("/getAllProduct",authenticateToken, getAllproduct);
+Router.post("/createProduct",authenticateToken,upload.single('file'), ProductValidation, save);
 Router.get("/:id",authenticateToken,findById); 
 Router.delete("/:id",authenticateToken, deleteById);
 Router.put("/:id",authenticateToken, update);

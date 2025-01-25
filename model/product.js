@@ -1,7 +1,7 @@
 const mongoose = require("mongoose")
 
 const productSchema=new mongoose.Schema({
-    name:{
+    productname:{
         type:String,
         require:true
     },
@@ -18,11 +18,11 @@ const productSchema=new mongoose.Schema({
         require:true
     },
     quantity:{
-        type:Number,
+        type:String,
         require:true
     },
     price:{
-        type:Number,
+        type:String,
         require:true
     },
 

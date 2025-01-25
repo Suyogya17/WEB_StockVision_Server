@@ -1,24 +1,48 @@
 const mongoose = require("mongoose")
 
 const customerSchema=new mongoose.Schema({
-    full_name:{
-        type:String,
-        require:true
-    },
-    email:{
-        type:String,
-        require:true
-    },
-    contact_no:{
-        type:String,
-        require:true
-    },
-    address:{
-        type:String,
-        require:true
-    },
+    fName: {
+        type: String,
+        required: true,
+  
+      },
+      lName: {
+        type: String,
+        required: true,
 
-})
+      },
+      phoneNo: {
+        type: String,
+        default: null,
+        
+      },
+      image: {
+        type: String,
+        default: null,
+      },
+      username: {
+        type: String,
+        required: true,
+       
+      },
+      password: {
+        type: String,
+        required: true,
+    
+      },
+      email: {
+        type: String,
+        required: true,
+    
+      },
+      address: {
+        type: String,
+        required: true,
+    
+      },
+      
+      
+    });
 
 const Customer = mongoose.model("customer",customerSchema);
 
