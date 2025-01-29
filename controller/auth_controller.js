@@ -3,15 +3,22 @@ const jwt = require("jsonwebtoken");
 const SECRET_KEY = "4d8ba63524bafdd9e9dde45a05118e7ffb99f4cdcd7d2543c7f7b77a6de9b302";
 const Credential = require("../model/credential");
 const asyncHandler = require("../middleware/async");
+const path = require("path");
 
 // Register a new user
 const register = asyncHandler(async (req, res) => {
-    const { fName, lName, phoneNo, email, username, address, password } = req.body;
+    console.log(req.body);
+    const { fName, lName, phoneNo, email, username, address, password,image } = req.body;
 
     try {
         // Validate required fields
         if (!fName || !lName || !phoneNo || !email || !username || !address || !password) {
             return res.status(400).json({ message: "All fields are required!" });
+        }
+
+         // Check if the image is uploaded
+         if (!image) {
+            return res.status(400).json({ message: "Image is required!" });
         }
 
         // Check if the username already exists
@@ -28,6 +35,7 @@ const register = asyncHandler(async (req, res) => {
             fName,
             lName,
             email,
+            image,
             phoneNo,
             username,
             address,
@@ -68,7 +76,26 @@ const login = asyncHandler(async (req, res) => {
     }
 });
 
+// Upload image
+const uploadImage = asyncHandler(async (req, res) => {
+
+     // // check for the file size and send an error message
+  // if (req.file.size > process.env.MAX_FILE_UPLOAD) {
+  //   return res.status(400).send({
+  //     message: `Please upload an image less than ${process.env.MAX_FILE_UPLOAD}`,
+  //   });
+  // }
+
+  if (!req.file) {
+    return res.status(400).send({ message: "Please upload a file" });
+  }
+  res.status(200).json({
+    success: true,
+    data: req.file.filename,
+  });
+});
 module.exports = {
     register,
     login,
+    uploadImage,
 };

@@ -1,9 +1,10 @@
-const express = require ("express");
-const { register, login } = require("../controller/auth_controller");
-const Router= express.Router();
-
+const express = require("express");
+const { register, login, uploadImage } = require("../controller/auth_controller");
+const uploadMiddleware = require("../middleware/uploads");
+const Router = express.Router();
 
 Router.post("/login", login);
-Router.post("/register", register);
+Router.post("/register", uploadMiddleware.single("image"), register);
+Router.post("/uploadImage", uploadMiddleware.single("profilePicture"), uploadImage);
 
-module.exports=Router;
+module.exports = Router;

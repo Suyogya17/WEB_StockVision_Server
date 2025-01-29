@@ -4,25 +4,25 @@ const path = require("path");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "public/uploads");
+    cb(null, 'public/uploads');
   },
   filename: (req, file, cb) => {
     let ext = path.extname(file.originalname);
-    cb(null, `IMG-${Date.now()}` + ext);
+    cb(null, Date.now() + path.extname(file.originalname));
   },
 });
 
 const imageFileFilter = (req, file, cb) => {
   if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-    return cb(new Error("File format not supported."), false);
+    return cb( Error("File format not supported."), false);
   }
   cb(null, true);
 };
 
-const upload = multer({
+const uploadMiddleware = multer({
   storage: storage,
   fileFilter: imageFileFilter,
   limits: { fileSize: maxSize },
-}).single("profilePicture");
+});
 
-module.exports = upload;
+module.exports = uploadMiddleware;

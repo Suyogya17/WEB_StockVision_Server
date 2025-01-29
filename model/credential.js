@@ -1,9 +1,11 @@
+const { required } = require("joi");
 const mongoose = require("mongoose");
 
 const credSchema = new mongoose.Schema({
     fName: { type: String, required: true },
     lName: { type: String, required: true },
-    image: { type: String, required: false },
+    image: { type: String},
+    email: {type:String, required: true},
     phoneNo: { type: String, required: true },
     username: { type: String, required: true },
     address: { type: String, required: true },
