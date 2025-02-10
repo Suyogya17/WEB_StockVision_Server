@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-Router.get("/getAllProduct",authenticateToken, getAllproduct);
+Router.get("/getAllproduct",authenticateToken, getAllproduct);
 Router.post("/createProduct",authenticateToken,upload.single('file'), ProductValidation, save);
 Router.get("/:id",authenticateToken,findById); 
 Router.delete("/:id",authenticateToken, deleteById);

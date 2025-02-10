@@ -1,7 +1,7 @@
 const joi =require("joi");
 
 const productSchema= joi.object({
-    name:joi.string().required(),
+    productName:joi.string().required(),
     description:joi.string().required(),
     type:joi.string().required(),
     quantity:joi.number().required(),
@@ -10,8 +10,8 @@ const productSchema= joi.object({
 })
 
 function ProductValidation(req, res, next) {
-    const { name, description, type, quantity, price } = req.body;
-    const { error } = productSchema.validate({ name, description, type, quantity, price });
+    const { productName, description, type, quantity, price } = req.body;
+    const { error } = productSchema.validate({ productName, description, type, quantity, price });
     if (error) {
         return res.status(400).json({
             message: "Product Data Validation Failed",

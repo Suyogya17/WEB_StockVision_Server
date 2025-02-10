@@ -1,6 +1,24 @@
 const asyncHandler = require("../middleware/async");
 const Product = require("../model/product");
+const jwt = require("jsonwebtoken");
 
+
+// const getAllproduct = asyncHandler(async (req, res) => {
+//     try {
+//         const products = await Product.find();
+//         res.status(200).json({
+//             success: true,
+//             count: products.length,
+//             data: products,
+//         });
+//     } catch (e) {
+//         res.status(500).json({
+//             success: false,
+//             message: "Failed to fetch products",
+//             error: error.message,
+//         });
+//     }
+// });
 const getAllproduct = asyncHandler(async (req, res) => {
     try {
         const products = await Product.find();
@@ -20,7 +38,7 @@ const getAllproduct = asyncHandler(async (req, res) => {
 
 const save = asyncHandler(async (req, res) => {
     try {
-        const { productname, description, type, quantity, price } = req.body;
+        const { productName, description, type, quantity, price } = req.body;
 
         if (!req.file) {
             return res.status(400).json({
@@ -30,7 +48,7 @@ const save = asyncHandler(async (req, res) => {
         }
 
         const product = new Product({
-            productname,
+            productName,
             description,
             image: req.file.originalname,
             type,
