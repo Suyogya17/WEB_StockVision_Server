@@ -1,13 +1,15 @@
+const { required } = require("joi");
 const mongoose = require("mongoose")
 
 const productSchema=new mongoose.Schema({
     productName:{
         type:String,
-        require:true
+        required:true
     },
     image:{
         type:String,
-        require:true
+        required:true
+        
     },
     description:{
         type:String,

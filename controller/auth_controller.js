@@ -66,7 +66,8 @@ const login = asyncHandler(async (req, res) => {
         const token = jwt.sign(
             { username: cred.username, role: cred.role },
             SECRET_KEY,
-            { expiresIn: "24h" }
+            { expiresIn: "7d"
+            }
         );
 
         res.json({ success: true, token });

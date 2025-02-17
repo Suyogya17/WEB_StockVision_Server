@@ -1,24 +1,13 @@
 const express = require("express");
 const { getAllproduct, save, findById, deleteById, update } = require("../controller/product_controller");
+const uploadMiddleware = require("../middleware/uploads");
 const Router = express.Router();
-const multer = require("multer");
-const ProductValidation = require("../validation/product_validation");
 const {authenticateToken } = require("../security/auth");
 
-const storage = multer.diskStorage({
-    destination: function(req, res, cb) {
-        cb(null, 'assets/product_img');
-    },
-    filename: function(req, file, cb) {
-        cb(null, file.originalname);
-    }
-});
-const upload = multer({ storage });
-
-Router.get("/getAllproduct",authenticateToken, getAllproduct);
-Router.post("/createProduct",authenticateToken,upload.single('file'), ProductValidation, save);
-Router.get("/:id",authenticateToken,findById); 
-Router.delete("/:id",authenticateToken, deleteById);
-Router.put("/:id",authenticateToken, update);
+Router.get("/getAllproduct", getAllproduct);
+Router.post("/createProduct",uploadMiddleware.single('image'), save);
+Router.get("/:id",findById); 
+Router.delete("/:id", deleteById);
+Router.put("/updateProduct/:id",uploadMiddleware.single("image"), update);
 
 module.exports = Router;
