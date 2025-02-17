@@ -17,9 +17,9 @@ const register = asyncHandler(async (req, res) => {
         }
 
          // Check if the image is uploaded
-         if (!image) {
-            return res.status(400).json({ message: "Image is required!" });
-        }
+        //  if (!image) {
+        //     return res.status(400).json({ message: "Image is required!" });
+        // }
 
         // Check if the username already exists
         const existingUser = await Credential.findOne({ username });
