@@ -10,6 +10,9 @@ const credSchema = new mongoose.Schema({
     username: { type: String, required: true },
     address: { type: String, required: true },
     password: { type: String, required: true },
+    isAdmin: { type: String, required: true },
+    role: { type: String, required: true, default: 'user' } 
+
 });
 
 const Credential = mongoose.model("Credential", credSchema);

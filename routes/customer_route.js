@@ -6,8 +6,8 @@ const Router= express.Router();
 
 Router.get("/getAllCustomer", findAllCustomer);
 Router.post("/createCustomer",CustomerValidation,save);
-Router.get("/:id",findById);
+// Router.get("/userfindbyid/:id",findById);
 Router.delete("/:id",deleteById);
-Router.put("/:id",update);
+// Router.put("/updateCustomer/:id",update);
 
 module.exports=Router;

@@ -15,14 +15,18 @@ function authenticateToken(req, res, next) {
 }
 
 
-function authorizeRole (role){
-    return(req,res,next)=>{
-        if (req.user.role!==role){
-            return res.status(403).send("Access Denied: Insuffecient Permissions")
+function authorizeRole(role) {
+    return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).send("User not authenticated");
         }
 
-        next();
-    }
+        if (req.user.role !== role) {
+            return res.status(403).send("Access Denied: Insufficient Permissions");
+        }
+
+        next(); 
+    };
 }
 
 module.exports={authenticateToken,authorizeRole}
