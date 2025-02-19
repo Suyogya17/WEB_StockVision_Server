@@ -9,6 +9,6 @@ Router.post("/register", uploadMiddleware.single("profilePicture"), register);
 Router.post("/uploadImage", uploadMiddleware.single("profilePicture"), uploadImage);
 // Router.get("/:id",findById); 
 Router.put("/updateUser/:id",uploadMiddleware.single("profilePicture"),authenticateToken, update);
-Router.get("/userfindbyid",authenticateToken,findbyid);
+Router.get("/userfindbyid",uploadMiddleware.single("profilePicture"),authenticateToken,authenticateToken,findbyid);
 
 module.exports = Router;
