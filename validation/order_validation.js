@@ -35,7 +35,6 @@ const orderSchema = joi.object({
     totalPrice: joi.number().positive().required(), // Total price of the order
     shippingAddress: joi.string().required(), // Shipping address required
     paymentStatus: joi.string().valid("pending", "completed", "failed").default("pending"), // Payment status with default
-    orderDate: joi.date().iso().required(), // Date when the order was placed
 });
 
 function OrderValidation(req, res, next) {

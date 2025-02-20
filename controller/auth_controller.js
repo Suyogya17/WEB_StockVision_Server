@@ -91,6 +91,7 @@ const login = asyncHandler(async (req, res) => {
 
     res.json({ success: true, token, cred });
     console.log(cred);
+    console.log(token);
   } catch (error) {
     console.error(error);
     res.status(500).json({
