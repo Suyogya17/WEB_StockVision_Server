@@ -157,11 +157,15 @@ const deleteById = asyncHandler(async (req, res) => {
 // Update an order
 const update = asyncHandler(async (req, res) => {
   try {
-    const order = await Order.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+    const { shippingAddress } = req.body; // Only extract shipping address from request body
+    
+    const order = await Order.findByIdAndUpdate(req.params.id, {
+      shippingAddress, // Update only the shipping address
+    }, {
+      new: true, // Ensure that the updated order is returned
     })
-      .populate("customer") // Populate customer details
-      .populate("products.product"); // Populate product details if needed
+      .populate("customer")
+      .populate("products.product"); // Populate customer and products for response
 
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
@@ -169,14 +173,13 @@ const update = asyncHandler(async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Order updated successfully",
+      message: "Shipping address updated successfully",
       data: order,
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
-
 module.exports = {
   getAllOrder,
   save,

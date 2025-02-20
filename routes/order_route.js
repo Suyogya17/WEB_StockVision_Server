@@ -22,6 +22,7 @@ const {
 const OrderValidation = require("../validation/order_validation"); // Assuming this validates the order data
 const Router = express.Router();
 const { authenticateToken } = require("../security/auth");
+const uploadMiddleware = require("../middleware/uploads");
 
 // Get all orders
 Router.get("/getAllOrder", getAllOrder);
@@ -30,14 +31,17 @@ Router.get("/getAllOrder", getAllOrder);
 Router.post("/createOrder", authenticateToken, OrderValidation, save);
 
 // Get an order by ID
-Router.get("/getuserorders/:userId",authenticateToken, findByCustomerId);
+Router.get(
+  "/getuserorders/:userId",
+  authenticateToken,
+  uploadMiddleware.single("image"),
+  findByCustomerId
+);
 
 // Delete an order by ID
-Router.delete("/orders/:id", deleteById);
+Router.delete("/deleteOrder/:id", authenticateToken, deleteById);
 
 // Update an order by ID
-Router.put("/order/:id", update);
-
-
+Router.put("/updateOrder/:id", update);
 
 module.exports = Router;
