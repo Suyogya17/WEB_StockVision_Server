@@ -1,5 +1,6 @@
 const asyncHandler = require("../middleware/async");
 const Order = require("../model/order");
+const Product = require("../model/product");
 
 // Get all orders
 const getAllOrder = asyncHandler(async (req, res) => {
@@ -21,80 +22,59 @@ const getAllOrder = asyncHandler(async (req, res) => {
   }
 });
 
-// Save a new order
-// const save = asyncHandler(async (req, res) => {
-//   console.log(" Received User from Middleware:", req.user); // Debugging
-
-//   // Ensure `req.user` is present
-//   if (!req.user || !req.user.userId) {
-//     return res.status(401).json({ message: "User not authenticated" });
-//   }
-
-//   const { products, totalPrice, shippingAddress, status, paymentStatus } =
-//     req.body;
-
-//   // Ensure required fields are present
-//   if (!products || products.length === 0 || !shippingAddress || !totalPrice) {
-//     return res.status(400).json({ message: "Missing required fields" });
-//   }
-
-//   try {
-//     const order = new Order({
-//       customer: req.user.userId, // Ensure this matches your middleware's user object
-//       products,
-//       totalPrice,
-//       shippingAddress,
-//       status: status || "pending",
-//       paymentStatus: paymentStatus || "pending",
-
-//     });
-
-//     await order.save();
-
-//     res.status(201).json({
-//       success: true,
-//       message: "Order placed successfully",
-//       orderDetails: order,
-//     });
-//     console.log("order saved: " ,order)
-//   } catch (error) {
-//     console.error("Error Saving Order:", error); // Log any errors
-//     res.status(500).json({
-//       success: false,
-//       message: "Error placing order",
-//       error: error.message,
-//     });
-//   }
-// });
 const save = asyncHandler(async (req, res) => {
   console.log("Received User from Middleware:", req.user); // Debugging
 
-  // Ensure `req.user` is present and contains `userId`
   if (!req.user || !req.user.userId) {
     return res.status(401).json({ message: "User not authenticated" });
   }
 
-  const { products, totalPrice, shippingAddress, status, paymentStatus } =
-    req.body;
+  const { products, totalPrice, shippingAddress, status, paymentStatus } = req.body;
 
-  // Ensure required fields are present
   if (!products || products.length === 0 || !shippingAddress || !totalPrice) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
   try {
+    // Validate product quantities before placing the order
+    for (let i = 0; i < products.length; i++) {
+      const { product: productId, quantity } = products[i];
+      const product = await Product.findById(productId);
+
+      if (!product) {
+        return res.status(404).json({ message: `Product ${productId} not found` });
+      }
+
+      if (product.quantity < quantity) {
+        return res.status(400).json({
+          message: `Insufficient stock for ${product.productName}. Only ${product.quantity} left in stock.`,
+        });
+      }
+    }
+
+    // Create the order
     const order = new Order({
-      customer: req.user.userId, // Ensure this matches your middleware's user object
+      customer: req.user.userId,
       products,
       totalPrice,
       shippingAddress,
-      status: status || "pending", // Default to "pending"
-      paymentStatus: paymentStatus || "pending", // Default to "pending"
+      status: status || "pending",
+      paymentStatus: paymentStatus || "pending",
     });
 
     await order.save();
 
-    // Send the response back with the order details
+    // Deduct the stock from the products
+    for (let i = 0; i < products.length; i++) {
+      const { product: productId, quantity } = products[i];
+      const product = await Product.findById(productId);
+
+      if (product) {
+        product.quantity -= quantity; // Reduce the stock
+        await product.save();
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: "Order placed successfully",
@@ -103,7 +83,7 @@ const save = asyncHandler(async (req, res) => {
 
     console.log("Order saved:", order); // Debugging log for saved order
   } catch (error) {
-    console.error("Error Saving Order:", error); // Log any errors
+    console.error("Error Saving Order:", error);
     res.status(500).json({
       success: false,
       message: "Error placing order",
@@ -111,6 +91,7 @@ const save = asyncHandler(async (req, res) => {
     });
   }
 });
+
 
 // Find order by ID
 const findByCustomerId = asyncHandler(async (req, res) => {
@@ -144,11 +125,33 @@ const findByCustomerId = asyncHandler(async (req, res) => {
 // Delete order by ID
 const deleteById = asyncHandler(async (req, res) => {
   try {
-    const order = await Order.findByIdAndDelete(req.params.id);
+    const order = await Order.findById(req.params.id).populate(
+      "products.product"
+    );
+
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
-    res.status(200).json({ message: "Order deleted successfully" });
+
+    // Restore product quantities
+    for (let i = 0; i < order.products.length; i++) {
+      const { product, quantity } = order.products[i];
+
+      // Find the product in the database and restore the quantity
+      const productToUpdate = await Product.findById(product._id);
+
+      if (productToUpdate) {
+        productToUpdate.quantity += quantity; // Restore the quantity
+        await productToUpdate.save();
+      }
+    }
+
+    // Now delete the order
+    await Order.findByIdAndDelete(req.params.id);
+
+    res
+      .status(200)
+      .json({ message: "Order deleted and product quantities restored" });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -157,29 +160,71 @@ const deleteById = asyncHandler(async (req, res) => {
 // Update an order
 const update = asyncHandler(async (req, res) => {
   try {
-    const { shippingAddress } = req.body; // Only extract shipping address from request body
-    
-    const order = await Order.findByIdAndUpdate(req.params.id, {
-      shippingAddress, // Update only the shipping address
-    }, {
-      new: true, // Ensure that the updated order is returned
-    })
-      .populate("customer")
-      .populate("products.product"); // Populate customer and products for response
+    const { shippingAddress, products } = req.body;
+    const orderId = req.params.id;
+
+    // Fetch the existing order from the database
+    const order = await Order.findById(orderId).populate("products.product");
 
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
 
+    console.log("Updating order:", orderId);
+
+    // Step 1: Restore the previous product stock before updating
+    for (let item of order.products) {
+      const productToUpdate = await Product.findById(item.product._id);
+      if (productToUpdate) {
+        productToUpdate.quantity += item.quantity; // Restore previous quantity
+        await productToUpdate.save();
+      }
+    }
+
+    // Step 2: Validate and update new product quantities
+    for (let item of products) {
+      const product = await Product.findById(item.product);
+
+      if (!product) {
+        return res.status(404).json({ message: `Product ${item.product} not found` });
+      }
+
+      const existingOrderItem = order.products.find((p) => p.product._id.toString() === item.product);
+      const previousQuantity = existingOrderItem ? existingOrderItem.quantity : 0;
+      const quantityDifference = item.quantity - previousQuantity;
+
+      // Ensure sufficient stock for the new quantity
+      if (product.quantity < quantityDifference) {
+        return res.status(400).json({
+          message: `Insufficient stock for ${product.productName}. Only ${product.quantity} left.`,
+        });
+      }
+
+      // Update the stock based on the quantity difference
+      product.quantity -= quantityDifference;
+      await product.save();
+    }
+
+    // Step 3: Update the order details
+    order.shippingAddress = shippingAddress || order.shippingAddress;
+    order.products = products || order.products;
+
+    await order.save();
+
+    console.log("Order updated successfully:", order);
+
     res.status(200).json({
       success: true,
-      message: "Shipping address updated successfully",
+      message: "Order updated successfully",
       data: order,
     });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
+  } catch (error) {
+    console.error("Error updating order:", error);
+    res.status(500).json({ error: error.message });
   }
 });
+
+
 module.exports = {
   getAllOrder,
   save,
