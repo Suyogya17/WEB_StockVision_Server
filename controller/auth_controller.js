@@ -268,10 +268,28 @@ const findbyid = async (req, res) => {
   }
 };
 
+const getAllUser = asyncHandler(async (req, res) => {
+  try {
+    const user = await Credential.find();
+    res.status(200).json({
+      success: true,
+      count: user.length,
+      data: user,
+    });
+  } catch (e) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch products",
+      error: error.message,
+    });
+  }
+});
+
 module.exports = {
   register,
   login,
   uploadImage,
   update,
   findbyid,
+  getAllUser,
 };

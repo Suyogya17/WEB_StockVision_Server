@@ -5,7 +5,7 @@ const Order = require("../model/order");
 const getAllOrder = asyncHandler(async (req, res) => {
   try {
     const orders = await Order.find()
-      .populate("customer", "fname lname") // Populate customer details (only name & email)
+      .populate("customer", "username") // Populate customer details (only name & email)
       .populate("products.product", "productName price image"); // Populate product details
 
     console.log("Fetched Orders:", orders); // Debugging: See what backend is sending
