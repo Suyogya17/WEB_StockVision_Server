@@ -13,12 +13,11 @@ const customerSchema=new mongoose.Schema({
       },
       phoneNo: {
         type: String,
-        default: null,
+        default: true,
         
       },
       image: {
         type: String,
-        default: null,
       },
       username: {
         type: String,
