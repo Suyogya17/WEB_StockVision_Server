@@ -25,7 +25,7 @@ Router.put(
   authenticateToken,
   update
 );
-Router.get("/userfindbyid", authenticateToken, authenticateToken, findbyid);
+Router.get("/userfindbyid", authenticateToken, findbyid);
 Router.get("/getAllUser", getAllUser);
 
 module.exports = Router;
