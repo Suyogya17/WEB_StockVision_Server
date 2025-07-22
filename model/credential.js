@@ -1,19 +1,30 @@
-const { required } = require("joi");
 const mongoose = require("mongoose");
 
-const credSchema = new mongoose.Schema({
-  fName: { type: String, required: true },
-  lName: { type: String, required: true },
-  image: { type: String },
-  email: { type: String, required: true },
-  phoneNo: { type: String, required: true },
-  username: { type: String, required: true },
-  address: { type: String, required: true },
-  password: { type: String, required: true },
-  isAdmin: { type: String, required: true },
-  role: { type: String, required: true, default: "user" },
-});
+const credSchema = new mongoose.Schema(
+  {
+    fName: { type: String, required: true },
+    lName: { type: String, required: true },
+    image: { type: String },
+    email: { type: String, required: true, unique: true },
+    phoneNo: { type: String, required: true },
+    username: { type: String, required: true, unique: true },
+    address: { type: String, required: true },
+    password: { type: String, required: true },
+    isAdmin: { type: Boolean, default: false },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
+    isVerified: { type: Boolean, default: false },
+    otp: { type: String },
+    otpExpiry: { type: Date },
+    loginAttempts: { type: Number, default: 0 },
+    lockUntil: { type: Date },
+    resetPasswordToken: { type: String },
+    resetPasswordExpiry: { type: Date },
+  },
+  { timestamps: true }
+);
 
-const Credential = mongoose.model("credential", credSchema);
-
-module.exports = Credential;
+module.exports = mongoose.model("Credential", credSchema);

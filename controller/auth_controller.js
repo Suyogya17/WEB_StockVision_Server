@@ -1,106 +1,225 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const SECRET_KEY =
-  "4d8ba63524bafdd9e9dde45a05118e7ffb99f4cdcd7d2543c7f7b77a6de9b302";
 const Credential = require("../model/credential");
 const asyncHandler = require("../middleware/async");
-const path = require("path");
 const mongoose = require("mongoose");
+const nodemailer = require("nodemailer");
+const crypto = require("crypto");
+const logActivity = require("../utils/logActivity");
 
-// Register a new user
+const SECRET_KEY =
+  "4d8ba63524bafdd9e9dde45a05118e7ffb99f4cdcd7d2543c7f7b77a6de9b302";
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCK_TIME = 15 * 60 * 1000;
+
+// 🔐 Generate OTP
+const generateOTP = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
+
+// 📧 Email Transporter
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "suyogyashrestha17@gmail.com",
+    pass: "awbpbkaarbfhvztm",
+  },
+});
+
+// ✅ Register with Email OTP
 const register = asyncHandler(async (req, res) => {
-  console.log(req.body);
-  const { fName, lName, phoneNo, email, username, address, password, image } =
+  const { fName, lName, phoneNo, email, username, address, password } =
     req.body;
-
-  try {
-    // Validate required fields
-    if (
-      !fName ||
-      !lName ||
-      !phoneNo ||
-      !email ||
-      !username ||
-      !address ||
-      !password
-    ) {
-      return res.status(400).json({ message: "All fields are required!" });
-    }
-    // Handle image upload if exists
-    let imagePath = "";
-    if (req.file) {
-      imagePath = req.file; // Save the filename in the database
-    }
-    // Uncomment and validate image if needed
-    // if (!image) {
-    //     return res.status(400).json({ message: "Image is required!" });
-    // }
-
-    // Check if the username already exists
-    const existingUser = await Credential.findOne({ username });
-    if (existingUser) {
-      return res.status(400).json({ message: "Username already exists!" });
-    }
-
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create a new credential
-    const cred = new Credential({
-      fName,
-      lName,
-      email,
-      image,
-      phoneNo,
-      username,
-      address,
-      password: hashedPassword,
-      isAdmin: false, // Assuming the user is not an admin by default
-    });
-
-    // Save the user to the database
-    await cred.save();
-
-    res.status(201).json({ success: true, data: cred });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  if (
+    !fName ||
+    !lName ||
+    !phoneNo ||
+    !email ||
+    !username ||
+    !address ||
+    !password
+  ) {
+    return res.status(400).json({ message: "All fields are required" });
   }
+
+  const existingUser = await Credential.findOne({
+    $or: [{ username }, { email }],
+  });
+  if (existingUser)
+    return res.status(400).json({ message: "User already exists" });
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const otp = generateOTP();
+  const otpExpiry = Date.now() + 10 * 60 * 1000;
+
+  const newUser = new Credential({
+    fName,
+    lName,
+    phoneNo,
+    email,
+    username,
+    address,
+    password: hashedPassword,
+    otp,
+    otpExpiry,
+    isVerified: false,
+    isAdmin: false,
+  });
+
+  await newUser.save();
+  await logActivity({
+    req,
+    userId: newUser._id,
+    action: "register",
+    status: "success",
+  });
+
+  await transporter.sendMail({
+    from: "your-email@gmail.com",
+    to: email,
+    subject: "Your OTP for verification",
+    text: `Your OTP is ${otp}. It expires in 10 minutes.`,
+  });
+
+  res.status(201).json({ success: true, message: "OTP sent to email" });
 });
 
-// Login a user
+// ✅ Verify OTP
+const verifyOTP = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+  const user = await Credential.findOne({ email });
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  if (user.otp !== otp || Date.now() > user.otpExpiry) {
+    await logActivity({
+      req,
+      userId: user._id,
+      action: "verify-otp",
+      status: "fail",
+    });
+    return res.status(400).json({ message: "Invalid or expired OTP" });
+  }
+
+  user.isVerified = true;
+  user.otp = undefined;
+  user.otpExpiry = undefined;
+  await user.save();
+
+  await logActivity({
+    req,
+    userId: user._id,
+    action: "verify-otp",
+    status: "success",
+  });
+
+  const token = jwt.sign(
+    {
+      userId: user._id,
+      role: user.isAdmin ? "admin" : "user",
+      username: user.username,
+    },
+    SECRET_KEY,
+    { expiresIn: "7d" }
+  );
+
+  res
+    .status(200)
+    .json({ success: true, message: "Verification successful", token });
+});
+
+// 🔁 Resend OTP
+const resendOTP = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const user = await Credential.findOne({ email });
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  if (user.isVerified)
+    return res.status(400).json({ message: "User already verified" });
+
+  const newOTP = generateOTP();
+  user.otp = newOTP;
+  user.otpExpiry = Date.now() + 10 * 60 * 1000;
+  await user.save();
+
+  await transporter.sendMail({
+    from: "your-email@gmail.com",
+    to: email,
+    subject: "Resent OTP",
+    text: `Your new OTP is ${newOTP}. It expires in 10 minutes.`,
+  });
+
+  await logActivity({
+    req,
+    userId: user._id,
+    action: "resend-otp",
+    status: "success",
+  });
+
+  res.status(200).json({ success: true, message: "New OTP sent to email" });
+});
+
+// ✅ Login
 const login = asyncHandler(async (req, res) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
+  const user = await Credential.findOne({ email });
+  if (!user)
+    return res.status(403).json({ message: "Invalid email or password" });
 
-  try {
-    // Check if the user exists
-    const cred = await Credential.findOne({ username });
-    if (!cred || !(await bcrypt.compare(password, cred.password))) {
-      return res.status(403).json({ message: "Invalid Username or Password" });
-    }
+  if (!user.isVerified)
+    return res.status(403).json({ message: "Please verify your account" });
 
-    // Generate a JWT token (fix role to use 'isAdmin')
-    const token = jwt.sign(
-      {
-        username: cred.username,
-        role: cred.isAdmin ? "admin" : "user",
-        userId: cred._id,
-      }, // Updated role handling
-      SECRET_KEY,
-      { expiresIn: "7d" }
-    );
-
-    res.json({ success: true, token, cred });
-    console.log(cred);
-    console.log(token);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      error: "An error occurred while logging in. Please try again later.",
+  if (user.lockUntil && user.lockUntil > Date.now()) {
+    await logActivity({
+      req,
+      userId: user._id,
+      action: "login",
+      status: "locked",
     });
+    return res
+      .status(403)
+      .json({ message: "Account locked. Try again later." });
   }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    user.loginAttempts += 1;
+    if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+      user.lockUntil = Date.now() + LOCK_TIME;
+    }
+    await user.save();
+    await logActivity({
+      req,
+      userId: user._id,
+      action: "login",
+      status: "fail",
+    });
+    return res.status(403).json({ message: "Invalid credentials" });
+  }
+
+  user.loginAttempts = 0;
+  user.lockUntil = undefined;
+  await user.save();
+
+  const token = jwt.sign(
+    {
+      userId: user._id,
+      role: user.isAdmin ? "admin" : "user",
+      username: user.username,
+    },
+    SECRET_KEY,
+    { expiresIn: "7d" }
+  );
+
+  await logActivity({
+    req,
+    userId: user._id,
+    action: "login",
+    status: "success",
+  });
+
+  res.status(200).json({ success: true, token, user });
 });
 
-// Upload image
+// ✅ Upload Image
 const uploadImage = asyncHandler(async (req, res) => {
   if (!req.file) {
     return res.status(400).send({ message: "Please upload a file" });
@@ -112,184 +231,125 @@ const uploadImage = asyncHandler(async (req, res) => {
   });
 });
 
-// const update = asyncHandler(async (req, res) => {
-//     try {
-//         const user = await Credential.findByIdAndUpdate(
-//             req.params.id,
-//             req.body,
-//             { new: true, runValidators: true }
-//         );
-
-//         if (!user) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "User not found",
-//             });
-//         }
-
-//         res.status(200).json({
-//             success: true,
-//             message: "User updated successfully",
-//             data: user, // Correct variable name
-//         });
-//     } catch (error) {
-//         res.status(500).json({
-//             success: false,
-//             message: "Failed to update User",
-//             error: error.message, // Correct variable name
-//         });
-//     }
-// });
-// const update = asyncHandler(async (req, res) => {
-//     try {
-//         const updatedUser = await Credential.findByIdAndUpdate(
-//             req.params.id,
-//             req.body,  // Directly update without checking duplicates
-//             { new: true, runValidators: true, upsert: false }  // Prevents inserting new records
-//         );
-
-//         if (!updatedUser) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "User not found",
-//             });
-//         }
-
-//         res.status(200).json({
-//             success: true,
-//             message: "User updated successfully",
-//             data: updatedUser,
-//         });
-//     } catch (error) {
-//         res.status(500).json({
-//             success: false,
-//             message: "Failed to update User",
-//             error: error.message,
-//         });
-//     }
-// });
-// // Find user by ID
-// const findById = asyncHandler(async (req, res) => {
-//     try {
-//       // Check if the user ID from token matches the ID in the URL
-//       if (req.user.id !== req.params.id) {
-//         return res.status(403).json({
-//           success: false,
-//           message: "You are not authorized to view this user's details",
-//         });
-//       }
-
-//       // Find the user by ID
-//       const userfind = await Credential.findById(req.params.id);
-
-//       // If user is not found, return 404
-//       if (!userfind) {
-//         return res.status(404).json({
-//           success: false,
-//           message: "User not found",
-//         });
-//       }
-
-//       // Return user details
-//       res.status(200).json({
-//         success: true,
-//         data: userfind,
-//       });
-//     } catch (error) {
-//       // Catch any errors and return 500
-//       res.status(500).json({
-//         success: false,
-//         message: "Failed to fetch User",
-//         error: error.message,
-//       });
-//     }
-//   });
-
+// ✅ Update User
 const update = asyncHandler(async (req, res) => {
-  const user = req.body;
+  const updateData = req.body;
+  if (req.file) updateData.image = req.file.filename;
 
-  // Check if there is a file uploaded and handle it
-  if (req.file) {
-    const profilePicture = req.file;
-
-    // Check if the file type is valid (jpg, jpeg, png, gif)
-    if (!profilePicture.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-      return res.status(400).send({ message: "File format not supported." });
+  const updatedUser = await Credential.findByIdAndUpdate(
+    req.params.id,
+    updateData,
+    {
+      new: true,
+      runValidators: true,
     }
+  );
 
-    // Simply save the file's filename in the database (no need to move the file)
-    user.image = profilePicture.filename;
-  }
+  if (!updatedUser) return res.status(404).send({ message: "User not found" });
 
-  // Proceed with updating the user data, including the image field if uploaded
-  const updatedUser = await Credential.findByIdAndUpdate(req.params.id, user, {
-    new: true,
-    runValidators: true,
-  });
-
-  if (!updatedUser) {
-    return res.status(404).send({ message: "User not found" });
-  }
-
-  res.status(200).json({
-    success: true,
-    message: "User updated successfully",
-    data: updatedUser,
-  });
+  res.status(200).json({ success: true, data: updatedUser });
 });
 
-// Find user by ID
-const findbyid = async (req, res) => {
-  try {
-    console.log("User data from token:", req.user);
-
-    const userId = req.user.userId;
-
-    if (!userId) {
-      return res.status(400).json({ error: "User ID is missing" });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(422).json({ error: "Invalid User ID" });
-    }
-
-    // Fetch user by userId
-    const cred = await Credential.findById(userId);
-
-    if (!cred) {
-      return res.status(404).json({ error: "User not found by findbyid" });
-    }
-
-    console.log("User data found:", cred);
-    res.status(200).json(cred);
-  } catch (e) {
-    console.error("Error while fetching user data:", e);
-    res.status(500).json({ error: "Server error" });
+// ✅ Get User by Token
+const findbyid = asyncHandler(async (req, res) => {
+  const userId = req.user.userId;
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(422).json({ error: "Invalid user ID" });
   }
-};
 
+  const user = await Credential.findById(userId);
+  if (!user) return res.status(404).json({ error: "User not found" });
+
+  res.status(200).json(user);
+});
+
+// ✅ Get All Users
 const getAllUser = asyncHandler(async (req, res) => {
-  try {
-    const user = await Credential.find();
-    res.status(200).json({
-      success: true,
-      count: user.length,
-      data: user,
-    });
-  } catch (e) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch products",
-      error: error.message,
-    });
+  const users = await Credential.find();
+  res.status(200).json({ success: true, count: users.length, data: users });
+});
+
+// ✅ Request Password Reset
+const requestPasswordReset = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const user = await Credential.findOne({ email });
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  user.resetPasswordToken = hashedToken;
+  user.resetPasswordExpiry = Date.now() + 15 * 60 * 1000;
+  await user.save();
+
+  const resetUrl = `http://localhost:5173/uresetpassword/${token}`;
+
+  await transporter.sendMail({
+    from: "your-email@gmail.com",
+    to: user.email,
+    subject: "Password Reset Request",
+    text: `You requested a password reset. Click here to reset: ${resetUrl}`,
+  });
+
+  await logActivity({
+    req,
+    userId: user._id,
+    action: "request-reset",
+    status: "success",
+  });
+
+  res.status(200).json({ message: "Password reset link sent to email" });
+});
+
+// ✅ Reset Password
+const resetPassword = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+  const resetToken = req.params.token;
+
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  const user = await Credential.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpiry: { $gt: Date.now() },
+  });
+
+  if (!user)
+    return res.status(400).json({ message: "Invalid or expired token" });
+
+  const isSamePassword = await bcrypt.compare(password, user.password);
+  if (isSamePassword) {
+    return res.status(400).json({ message: "Cannot reuse old password" });
   }
+
+  const hashedNewPassword = await bcrypt.hash(password, 10);
+  user.password = hashedNewPassword;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpiry = undefined;
+
+  await user.save();
+
+  await logActivity({
+    req,
+    userId: user._id,
+    action: "reset-password",
+    status: "success",
+  });
+
+  res.status(200).json({ message: "Password reset successful" });
 });
 
 module.exports = {
   register,
+  verifyOTP,
   login,
   uploadImage,
   update,
   findbyid,
   getAllUser,
+  resendOTP,
+  requestPasswordReset,
+  resetPassword,
 };
