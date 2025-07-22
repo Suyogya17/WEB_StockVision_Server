@@ -12,12 +12,14 @@
 // module.exports=Router;
 
 const express = require("express");
+const router = express.Router();
 const {
   getAllOrder,
   save,
   findByCustomerId,
   deleteById,
   update,
+  updateStatus,
 } = require("../controller/order_controller");
 const OrderValidation = require("../validation/order_validation"); // Assuming this validates the order data
 const Router = express.Router();
@@ -43,5 +45,5 @@ Router.delete("/deleteOrder/:id", authenticateToken, deleteById);
 
 // Update an order by ID
 Router.put("/updateOrder/:id", update);
-
+Router.put("/updateStatus", updateStatus);
 module.exports = Router;

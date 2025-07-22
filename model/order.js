@@ -1,10 +1,10 @@
 const mongoose = require("mongoose");
-
+const Product = require("../model/product");
 const orderSchema = new mongoose.Schema(
   {
     customer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "credential",
+      ref: "Credential",
       required: true,
     },
     products: [
@@ -15,13 +15,13 @@ const orderSchema = new mongoose.Schema(
           required: true,
         },
         quantity: {
-          type: String,
+          type: Number,
           required: true,
         },
       },
     ],
     totalPrice: {
-      type: String,
+      type: Number,
       required: true,
     },
     shippingAddress: {

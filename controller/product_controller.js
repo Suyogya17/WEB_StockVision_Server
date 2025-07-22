@@ -1,141 +1,68 @@
 const asyncHandler = require("../middleware/async");
 const Product = require("../model/product");
-const jwt = require("jsonwebtoken");
 
 const getAllproduct = asyncHandler(async (req, res) => {
-    try {
-        const products = await Product.find();
-        res.status(200).json({
-            success: true,
-            count: products.length,
-            data: products,
-        });
-    } catch (e) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch products",
-            error: error.message,
-        });
-    }
+  const products = await Product.find();
+  res.status(200).json({ success: true, count: products.length, data: products });
 });
 
 const save = asyncHandler(async (req, res) => {
-    try {
-        const { productName, description, type, quantity, price } = req.body;
-        console.log(req.file); 
-        if (!req.file) {
-            return res.status(400).json({
-                success: false,
-                message: "Image file is required",
-            });
-        }
+  const { productName, description, type, quantity, price } = req.body;
 
-        const newProduct = new Product({
-            productName,
-            description,
-            image: req.file.path,
-            type,
-            quantity,
-            price,
-        });
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: "Image file is required" });
+  }
 
-        await newProduct.save();
+  const newProduct = await Product.create({
+    productName,
+    description,
+    type,
+    quantity,
+    price,
+    image: req.file.path,
+  });
 
-        res.status(201).json({
-            success: true,
-            message: "Product saved successfully",
-            data: newProduct,
-        });
-    } catch (e) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to save product",
-            error: e.message,
-        });
-    }
+  res.status(201).json({ success: true, data: newProduct });
 });
 
 const findById = asyncHandler(async (req, res) => {
-    try {
-        const product = await Product.findById(req.params.id);
-
-        if (!product) {
-            return res.status(404).json({
-                success: false,
-                message: "Product not found",
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            data: product,
-        });
-    } catch (e) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch product",
-            error: error.message,
-        });
-    }
+  const product = await Product.findById(req.params.id);
+  if (!product) {
+    return res.status(404).json({ success: false, message: "Product not found" });
+  }
+  res.status(200).json({ success: true, data: product });
 });
 
 const deleteById = asyncHandler(async (req, res) => {
-    try {
-        const product = await Product.findByIdAndDelete(req.params.id);
-
-        if (!product) {
-            return res.status(404).json({
-                success: false,
-                message: "Product not found",
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: "Product deleted successfully",
-        });
-    } catch (e) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to delete product",
-            error: error.message,
-        });
-    }
+  const product = await Product.findByIdAndDelete(req.params.id);
+  if (!product) {
+    return res.status(404).json({ success: false, message: "Product not found" });
+  }
+  res.status(200).json({ success: true, message: "Product deleted" });
 });
 
 const update = asyncHandler(async (req, res) => {
-    try {
-        const product = await Product.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        );
+  const updateData = req.body;
+  if (req.file) {
+    updateData.image = req.file.path;
+  }
 
-        if (!product) {
-            return res.status(404).json({
-                success: false,
-                message: "Product not found",
-            });
-        }
+  const product = await Product.findByIdAndUpdate(req.params.id, updateData, {
+    new: true,
+    runValidators: true,
+  });
 
-        res.status(200).json({
-            success: true,
-            message: "Product updated successfully",
-            data: product,
-        });
-    } catch (e) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to update product",
-            error: e.message, 
-        });
-    }
+  if (!product) {
+    return res.status(404).json({ success: false, message: "Product not found" });
+  }
+
+  res.status(200).json({ success: true, data: product });
 });
 
 module.exports = {
-    getAllproduct,
-    save,
-    findById,
-    deleteById,
-    update,
+  getAllproduct,
+  save,
+  findById,
+  deleteById,
+  update,
 };

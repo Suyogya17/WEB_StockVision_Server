@@ -18,7 +18,11 @@ const getAllOrder = asyncHandler(async (req, res) => {
     });
   } catch (e) {
     console.error("Error fetching orders:", e); // Debugging
-    res.status(500).json({ error: e.message });
+    res.status(500).json({
+      sucess: false,
+      message: "Failed to fetch orders",
+      error: e.message,
+    });
   }
 });
 
@@ -29,7 +33,8 @@ const save = asyncHandler(async (req, res) => {
     return res.status(401).json({ message: "User not authenticated" });
   }
 
-  const { products, totalPrice, shippingAddress, status, paymentStatus } = req.body;
+  const { products, totalPrice, shippingAddress, status, paymentStatus } =
+    req.body;
 
   if (!products || products.length === 0 || !shippingAddress || !totalPrice) {
     return res.status(400).json({ message: "Missing required fields" });
@@ -42,7 +47,9 @@ const save = asyncHandler(async (req, res) => {
       const product = await Product.findById(productId);
 
       if (!product) {
-        return res.status(404).json({ message: `Product ${productId} not found` });
+        return res
+          .status(404)
+          .json({ message: `Product ${productId} not found` });
       }
 
       if (product.quantity < quantity) {
@@ -91,7 +98,6 @@ const save = asyncHandler(async (req, res) => {
     });
   }
 });
-
 
 // Find order by ID
 const findByCustomerId = asyncHandler(async (req, res) => {
@@ -186,11 +192,17 @@ const update = asyncHandler(async (req, res) => {
       const product = await Product.findById(item.product);
 
       if (!product) {
-        return res.status(404).json({ message: `Product ${item.product} not found` });
+        return res
+          .status(404)
+          .json({ message: `Product ${item.product} not found` });
       }
 
-      const existingOrderItem = order.products.find((p) => p.product._id.toString() === item.product);
-      const previousQuantity = existingOrderItem ? existingOrderItem.quantity : 0;
+      const existingOrderItem = order.products.find(
+        (p) => p.product._id.toString() === item.product
+      );
+      const previousQuantity = existingOrderItem
+        ? existingOrderItem.quantity
+        : 0;
       const quantityDifference = item.quantity - previousQuantity;
 
       // Ensure sufficient stock for the new quantity
@@ -223,7 +235,60 @@ const update = asyncHandler(async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+// Update only order status or payment status
+const updateStatus = asyncHandler(async (req, res) => {
+  const { orderId, updatedData } = req.body;
 
+  if (!orderId || !updatedData) {
+    return res.status(400).json({ message: "Missing required data" });
+  }
+
+  const validStatus = ["pending", "shipped", "delivered", "cancelled"];
+  const validPaymentStatus = ["pending", "completed", "failed"];
+
+  const updateFields = {};
+
+  if (updatedData.status) {
+    if (!validStatus.includes(updatedData.status)) {
+      return res.status(400).json({ message: "Invalid order status" });
+    }
+    updateFields.status = updatedData.status;
+  }
+
+  if (updatedData.paymentStatus) {
+    if (!validPaymentStatus.includes(updatedData.paymentStatus)) {
+      return res.status(400).json({ message: "Invalid payment status" });
+    }
+    updateFields.paymentStatus = updatedData.paymentStatus;
+  }
+
+  try {
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      { $set: updateFields },
+      { new: true }
+    )
+      .populate("customer", "username")
+      .populate("products.product", "productName image");
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Order status updated successfully",
+      data: updatedOrder,
+    });
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating order status",
+      error: error.message,
+    });
+  }
+});
 
 module.exports = {
   getAllOrder,
@@ -231,4 +296,5 @@ module.exports = {
   findByCustomerId,
   deleteById,
   update,
+  updateStatus,
 };

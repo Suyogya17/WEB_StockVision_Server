@@ -17,31 +17,24 @@ const { authenticateToken } = require("../security/auth");
 
 const Router = express.Router();
 
-// 📩 OTP-related routes
+// OTP
 Router.post("/resend-otp", resendOTP);
 Router.post("/verify-otp", verifyOTP);
 
-// 🔐 Authentication routes
-Router.post("/login", login);
+// Auth
 Router.post("/register", uploadMiddleware.single("profilePicture"), register);
+Router.post("/login", login);
 
-// 📸 Upload image
-Router.post(
-  "/uploadImage",
-  uploadMiddleware.single("profilePicture"),
-  uploadImage
-);
-
-// 👤 User routes
-Router.put(
-  "/updateUser/:id",
-  uploadMiddleware.single("profilePicture"),
-  authenticateToken,
-  update
-);
-Router.get("/userfindbyid", authenticateToken, findbyid);
-Router.get("/getAllUser", getAllUser);
+// Password
 Router.post("/request-reset", requestPasswordReset);
 Router.post("/reset-password/:token", resetPassword);
+
+// User actions
+Router.get("/userfindbyid",authenticateToken, findbyid);
+Router.put("/updateUser/:id", uploadMiddleware.single("profilePicture"), authenticateToken, update);
+Router.get("/getAllUser", getAllUser);
+
+// Upload (optional)
+Router.post("/uploadImage", uploadMiddleware.single("profilePicture"), uploadImage);
 
 module.exports = Router;
