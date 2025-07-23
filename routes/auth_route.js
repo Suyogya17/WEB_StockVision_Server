@@ -5,11 +5,11 @@ const {
   uploadImage,
   update,
   findbyid,
-  getAllUser,
   verifyOTP,
-  requestPasswordReset,
-  resetPassword,
   resendOTP,
+  getAllUser,
+  unlockAccount,
+  unlockAccountViaLink,
 } = require("../controller/auth_controller");
 
 const uploadMiddleware = require("../middleware/uploads");
@@ -17,24 +17,30 @@ const { authenticateToken } = require("../security/auth");
 
 const Router = express.Router();
 
-// OTP
-Router.post("/resend-otp", resendOTP);
-Router.post("/verify-otp", verifyOTP);
-
-// Auth
+// ✅ AUTH routes
 Router.post("/register", uploadMiddleware.single("profilePicture"), register);
 Router.post("/login", login);
+Router.post("/verify-otp", verifyOTP);
+Router.post("/resend-otp", resendOTP);
 
-// Password
-Router.post("/request-reset", requestPasswordReset);
-Router.post("/reset-password/:token", resetPassword);
+// ✅ UNLOCK routes
+Router.post("/unlock", unlockAccount); // manual unlock (form-based)
+Router.get("/unlock-account", unlockAccountViaLink); // ✅ this is correct
 
-// User actions
-Router.get("/userfindbyid",authenticateToken, findbyid);
-Router.put("/updateUser/:id", uploadMiddleware.single("profilePicture"), authenticateToken, update);
+
+// ✅ PROFILE routes
+Router.post(
+  "/uploadImage",
+  uploadMiddleware.single("image"),
+  uploadImage
+);
+Router.put(
+  "/updateUser/:id",
+  uploadMiddleware.single("image"),
+  authenticateToken,
+  update
+);
+Router.get("/userfindbyid", authenticateToken, findbyid);
 Router.get("/getAllUser", getAllUser);
-
-// Upload (optional)
-Router.post("/uploadImage", uploadMiddleware.single("profilePicture"), uploadImage);
 
 module.exports = Router;

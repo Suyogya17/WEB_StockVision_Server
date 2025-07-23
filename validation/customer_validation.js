@@ -4,7 +4,7 @@ const customerSchema= joi.object({
     fName:joi.string().required(),
     lName:joi.string().required(),
     email:joi.string().required().email(),
-    image:joi.string().required,
+    image:joi.string(),
     phoneNo:joi.string().required(),
     address:joi.string().required()
 
