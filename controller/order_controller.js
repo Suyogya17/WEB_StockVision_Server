@@ -27,6 +27,8 @@ const getAllOrder = asyncHandler(async (req, res) => {
 });
 
 const save = asyncHandler(async (req, res) => {
+  const { sendOrderConfirmationEmail } = require("../utils/mailer");
+
   console.log("Received User from Middleware:", req.user); // Debugging
 
   if (!req.user || !req.user.userId) {
@@ -41,7 +43,7 @@ const save = asyncHandler(async (req, res) => {
   }
 
   try {
-    // Validate product quantities before placing the order
+    // ✅ Validate stock
     for (let i = 0; i < products.length; i++) {
       const { product: productId, quantity } = products[i];
       const product = await Product.findById(productId);
@@ -59,7 +61,7 @@ const save = asyncHandler(async (req, res) => {
       }
     }
 
-    // Create the order
+    // ✅ Create order
     const order = new Order({
       customer: req.user.userId,
       products,
@@ -71,24 +73,35 @@ const save = asyncHandler(async (req, res) => {
 
     await order.save();
 
-    // Deduct the stock from the products
+    // ✅ Deduct stock
     for (let i = 0; i < products.length; i++) {
       const { product: productId, quantity } = products[i];
       const product = await Product.findById(productId);
 
       if (product) {
-        product.quantity -= quantity; // Reduce the stock
+        product.quantity -= quantity;
         await product.save();
       }
     }
 
+    // ✅ Send confirmation email
+    const populatedOrder = await Order.findById(order._id)
+      .populate("customer", "email")
+      .populate("products.product", "productName price");
+
+    await sendOrderConfirmationEmail(
+      populatedOrder.customer.email,
+      populatedOrder
+    );
+
+    // ✅ Respond
     res.status(201).json({
       success: true,
       message: "Order placed successfully",
       orderDetails: order,
     });
 
-    console.log("Order saved:", order); // Debugging log for saved order
+    console.log("Order saved and confirmation sent:", order);
   } catch (error) {
     console.error("Error Saving Order:", error);
     res.status(500).json({

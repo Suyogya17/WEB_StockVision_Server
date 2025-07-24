@@ -38,5 +38,33 @@ exports.sendUnlockEmail = async (email, unlockLink) => {
     `,
   };
 
+  await transporter.sendMail(mailOptions); // <- Don't forget to call it
+};
+
+// ✅ Send Order Confirmation Email
+exports.sendOrderConfirmationEmail = async (email, order) => {
+  const itemsList = order.products
+    .map(
+      (item) =>
+        `<li>${item.quantity} x ${item.product.productName} - $${item.product.price}</li>`
+    )
+    .join("");
+
+  const mailOptions = {
+    from: `"StockVision Orders" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "Your Order Confirmation - StockVision",
+    html: `
+      <h2>Order Confirmation</h2>
+      <p>Thank you for your purchase! Your order has been placed successfully.</p>
+      <p><strong>Order ID:</strong> ${order._id}</p>
+      <p><strong>Total Price:</strong> $${order.totalPrice}</p>
+      <p><strong>Shipping Address:</strong> ${order.shippingAddress}</p>
+      <h4>Items:</h4>
+      <ul>${itemsList}</ul>
+      <p>Status: ${order.status} | Payment: ${order.paymentStatus}</p>
+    `,
+  };
+
   await transporter.sendMail(mailOptions);
 };
