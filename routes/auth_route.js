@@ -10,6 +10,8 @@ const {
   getAllUser,
   unlockAccount,
   unlockAccountViaLink,
+  forgotPassword,
+  resetPassword
 } = require("../controller/auth_controller");
 
 const uploadMiddleware = require("../middleware/uploads");
@@ -42,5 +44,6 @@ Router.put(
 );
 Router.get("/userfindbyid", authenticateToken, findbyid);
 Router.get("/getAllUser", getAllUser);
-
+Router.post("/forgot-password", forgotPassword);
+Router.post("/reset-password/:token", resetPassword);
 module.exports = Router;

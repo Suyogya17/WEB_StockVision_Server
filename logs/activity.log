@@ -63,3 +63,16 @@
 [2025-07-24T03:39:17.401Z] User: 6881aae2cfe38f4da14ba976 | Action: Registered and OTP sent | IP: ::1
 [2025-07-24T03:39:36.840Z] User: 6881aae2cfe38f4da14ba976 | Action: OTP verified & JWT issued | IP: ::1
 [2025-07-24T03:39:44.069Z] User: 6881aae2cfe38f4da14ba976 | Action: Login successful | IP: ::1
+[2025-07-24T03:44:51.095Z] User: 6880ff61685d7d9f779501d7 | Action: Login successful | IP: ::1
+[2025-07-24T04:10:46.319Z] User: 6880ff61685d7d9f779501d7 | Action: Password reset | IP: ::1
+[2025-07-24T04:12:53.470Z] User: 6880ff61685d7d9f779501d7 | Action: Password reset | IP: ::1
+[2025-07-24T04:13:01.155Z] User: 6880ff61685d7d9f779501d7 | Action: Login successful | IP: ::1
+[2025-07-24T04:14:15.357Z] User: 6880ff61685d7d9f779501d7 | Action: Password reset | IP: ::1
+[2025-07-24T04:14:33.787Z] User: 6880ff61685d7d9f779501d7 | Action: Login successful | IP: ::1
+[2025-07-24T04:23:38.125Z] User: 6880ff61685d7d9f779501d7 | Action: Password reset | IP: ::1
+[2025-07-24T04:24:16.146Z] User: 6880ff61685d7d9f779501d7 | Action: Login successful | IP: ::1
+[2025-07-24T04:27:06.363Z] User: 6881b61645cef135e7fff011 | Action: Registered and OTP sent | IP: ::1
+[2025-07-24T04:27:35.340Z] User: 6881b63445cef135e7fff015 | Action: Registered and OTP sent | IP: ::1
+[2025-07-24T04:29:02.176Z] User: 6881b68b45cef135e7fff019 | Action: Registered and OTP sent | IP: ::1
+[2025-07-24T04:29:18.302Z] User: 6881b68b45cef135e7fff019 | Action: OTP verified & JWT issued | IP: ::1
+[2025-07-24T04:29:29.759Z] User: 6881b68b45cef135e7fff019 | Action: Login successful | IP: ::1

@@ -68,3 +68,22 @@ exports.sendOrderConfirmationEmail = async (email, order) => {
 
   await transporter.sendMail(mailOptions);
 };
+
+exports.sendResetPasswordEmail = async (email, resetUrl) => {
+  const mailOptions = {
+    from: `"StockVision Security" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "Reset Your StockVision Password",
+    html: `
+      <h2>Password Reset</h2>
+      <p>You requested to reset your password.</p>
+      <p>Click below to set a new one:</p>
+      <a href="${resetUrl}" style="padding:10px 20px;background:#007bff;color:#fff;text-decoration:none;border-radius:5px;">
+        Reset Password
+      </a>
+      <p>This link is valid for 10 minutes.</p>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+};

@@ -4,8 +4,9 @@ const jwt = require("jsonwebtoken");
 const { sendOTP, sendUnlockEmail } = require("../utils/mailer");
 const asyncHandler = require("../middleware/async");
 const { logAction } = require("../utils/logger");
-
+const { sendResetPasswordEmail } = require("../utils/mailer");
 const MAX_ATTEMPTS = 5;
+const crypto = require("crypto");
 
 // ✅ Register new user
 exports.register = asyncHandler(async (req, res) => {
@@ -243,4 +244,56 @@ exports.findbyid = asyncHandler(async (req, res) => {
 exports.getAllUser = asyncHandler(async (req, res) => {
   const users = await User.find().select("-password");
   res.status(200).json({ users });
+});
+
+exports.forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: "Email is required" });
+
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const resetToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  user.resetPasswordToken = resetToken;
+  user.resetPasswordExpiry = Date.now() + 10 * 60 * 1000; // 10 min
+  await user.save();
+
+  const resetUrl = `http://localhost:5173/reset-password/${token}`; // Frontend URL
+ try {
+  await sendResetPasswordEmail(user.email, resetUrl);
+} catch (err) {
+  console.error("Failed to send reset email:", err);
+  return res.status(500).json({ message: "Failed to send reset email." });
+}
+
+
+  res.status(200).json({ message: "Password reset link sent to email." });
+});
+
+exports.resetPassword = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpiry: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return res.status(400).json({ message: "Invalid or expired token" });
+  } 
+
+  const hash = await bcrypt.hash(password, 10);
+  user.password = hash;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpiry = undefined;
+  await user.save();
+
+  await logAction(user._id, "Password reset", req.ip);
+
+  res.status(200).json({ message: "Password reset successfully" });
 });
