@@ -248,10 +248,19 @@ exports.getAllUser = asyncHandler(async (req, res) => {
 
 exports.forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
+  const loggedInUserId = req.user.userId; // Extracted by authenticateToken middleware
+
   if (!email) return res.status(400).json({ message: "Email is required" });
 
   const user = await User.findOne({ email });
   if (!user) return res.status(404).json({ message: "User not found" });
+
+  // ✅ SECURITY CHECK: Ensure email belongs to logged-in user
+  if (user._id.toString() !== loggedInUserId) {
+    return res
+      .status(401)
+      .json({ message: "Unauthorized request for password reset" });
+  }
 
   const token = crypto.randomBytes(32).toString("hex");
   const resetToken = crypto.createHash("sha256").update(token).digest("hex");
@@ -260,16 +269,21 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
   user.resetPasswordExpiry = Date.now() + 10 * 60 * 1000; // 10 min
   await user.save();
 
-  const resetUrl = `https://localhost:5173/reset-password/${token}`; // Frontend URL
- try {
-  await sendResetPasswordEmail(user.email, resetUrl);
-} catch (err) {
-  console.error("Failed to send reset email:", err);
-  return res.status(500).json({ message: "Failed to send reset email." });
-}
+  const resetUrl = `https://localhost:5173/reset-password/${token}`;
 
+  try {
+    await sendResetPasswordEmail(user.email, resetUrl);
+  } catch (err) {
+    console.error("Failed to send reset email:", err);
+    return res.status(500).json({ message: "Failed to send reset email." });
+  }
 
-  res.status(200).json({ message: "Password reset link sent to email." });
+  res
+    .status(200)
+    .json({
+      success: true,
+      message: "Password reset link sent to your email.",
+    });
 });
 
 exports.resetPassword = asyncHandler(async (req, res) => {
@@ -285,7 +299,7 @@ exports.resetPassword = asyncHandler(async (req, res) => {
 
   if (!user) {
     return res.status(400).json({ message: "Invalid or expired token" });
-  } 
+  }
 
   const hash = await bcrypt.hash(password, 10);
   user.password = hash;

@@ -44,6 +44,6 @@ Router.put(
 );
 Router.get("/userfindbyid", authenticateToken, findbyid);
 Router.get("/getAllUser", getAllUser);
-Router.post("/forgot-password", forgotPassword);
+Router.post("/forgot-password",authenticateToken, forgotPassword);
 Router.post("/reset-password/:token", resetPassword);
 module.exports = Router;
