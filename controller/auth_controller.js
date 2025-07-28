@@ -72,7 +72,7 @@ exports.login = asyncHandler(async (req, res) => {
       user.isLocked = true;
       await user.save();
 
-      const unlockLink = `http://localhost:3000/api/auth/unlock-account?email=${encodeURIComponent(
+      const unlockLink = `https://localhost:3000/api/auth/unlock-account?email=${encodeURIComponent(
         email
       )}`;
       await sendUnlockEmail(user.email, unlockLink);
@@ -260,7 +260,7 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
   user.resetPasswordExpiry = Date.now() + 10 * 60 * 1000; // 10 min
   await user.save();
 
-  const resetUrl = `http://localhost:5173/reset-password/${token}`; // Frontend URL
+  const resetUrl = `https://localhost:5173/reset-password/${token}`; // Frontend URL
  try {
   await sendResetPasswordEmail(user.email, resetUrl);
 } catch (err) {

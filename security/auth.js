@@ -11,7 +11,7 @@ function authenticateToken(req, res, next) {
 
     // Standardized structure
     req.user = {
-      userId: verified.id,  // Use this consistently in your backend
+      userId: verified.id,  
       role: verified.role,
     };
 
