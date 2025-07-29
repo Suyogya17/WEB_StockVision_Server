@@ -97,3 +97,26 @@
 [2025-07-28T14:16:37.762Z] User: 68877947f92b44e0074cb954 | Action: Login successful | IP: ::1
 [2025-07-28T15:02:05.972Z] User: 68877947f92b44e0074cb954 | Action: Password reset | IP: ::1
 [2025-07-28T15:02:19.159Z] User: 68877947f92b44e0074cb954 | Action: Login successful | IP: ::1
+[2025-07-28T15:31:53.315Z] User: 688797e3e57f8740db872bfa | Action: Registered and OTP sent | IP: ::1
+[2025-07-28T15:32:26.318Z] User: 688797e3e57f8740db872bfa | Action: Invalid OTP attempt | IP: ::1
+[2025-07-28T15:32:32.027Z] User: 688797e3e57f8740db872bfa | Action: OTP verified & JWT issued | IP: ::1
+[2025-07-28T15:33:21.861Z] User: 688797e3e57f8740db872bfa | Action: Login successful | IP: ::1
+[2025-07-28T15:36:58.540Z] User: 688797e3e57f8740db872bfa | Action: Password reset | IP: ::1
+[2025-07-28T15:37:22.428Z] User: 688797e3e57f8740db872bfa | Action: Login successful | IP: ::1
+[2025-07-28T15:38:12.352Z] User: 687f26e0bd8d0599cec79a6e | Action: Login successful | IP: ::1
+[2025-07-28T15:52:10.850Z] User: 68879ca7e57f8740db872caa | Action: Registered and OTP sent | IP: ::1
+[2025-07-28T15:52:37.639Z] User: 68879ca7e57f8740db872caa | Action: Invalid OTP attempt | IP: ::1
+[2025-07-28T15:52:44.715Z] User: 68879ca7e57f8740db872caa | Action: OTP verified & JWT issued | IP: ::1
+[2025-07-28T15:53:47.471Z] User: 68879ca7e57f8740db872caa | Action: Login successful | IP: ::1
+[2025-07-28T15:59:21.818Z] User: 68879ca7e57f8740db872caa | Action: Password reset | IP: ::1
+[2025-07-28T16:00:11.581Z] User: 68879ca7e57f8740db872caa | Action: Login successful | IP: ::1
+[2025-07-28T16:00:50.137Z] User: 687f26e0bd8d0599cec79a6e | Action: Login successful | IP: ::1
+[2025-07-29T04:31:57.212Z] User: 68884eba579e514c0e5456c9 | Action: Registered and OTP sent | IP: ::1
+[2025-07-29T04:32:11.911Z] User: 68884eba579e514c0e5456c9 | Action: OTP verified & JWT issued | IP: ::1
+[2025-07-29T04:32:18.288Z] User: 68884eba579e514c0e5456c9 | Action: Login successful | IP: ::1
+[2025-07-29T06:15:21.774Z] User: 68884eba579e514c0e5456c9 | Action: Login successful | IP: ::1
+[2025-07-29T07:06:26.283Z] User: 68884eba579e514c0e5456c9 | Action: Login successful | IP: ::1
+[2025-07-29T08:57:47.827Z] User: 68888d08ecc7e19e939ae182 | Action: Registered and OTP sent | IP: ::1
+[2025-07-29T08:58:11.007Z] User: 68888d08ecc7e19e939ae182 | Action: OTP verified & JWT issued | IP: ::1
+[2025-07-29T08:58:21.130Z] User: 68888d08ecc7e19e939ae182 | Action: Login successful | IP: ::1
+[2025-07-29T09:00:20.130Z] User: 687f26e0bd8d0599cec79a6e | Action: Login successful | IP: ::1

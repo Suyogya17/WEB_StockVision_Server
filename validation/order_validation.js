@@ -1,25 +1,3 @@
-// const joi = require("joi");
-
-// const orderSchema = joi.object({
-//     customerId: joi.string().required(),
-//     productId: joi.string().required(),
-//     date: joi.date().iso().required(),
-//     day: joi.string().required(),
-//     time: joi.string().required(),
-//     status: joi.string().required(),
-// });
-// function OrderValidation(req, res, next) {
-//     const { customerId, productId, date, day, time, status } = req.body;
-//     const { error } = orderSchema.validate({ customerId, productId, date, day, time, status });
-
-//     if (error) {
-//         return res.status(400).json({ error: error.details[0].message });
-//     }
-
-//     next();
-// }
-
-// module.exports = OrderValidation;
 const joi = require("joi");
 
 const orderSchema = joi.object({
@@ -28,28 +6,45 @@ const orderSchema = joi.object({
     .items(
       joi.object({
         product: joi.string().required(), // Product ID
-        quantity: joi.number().positive().required(), // Quantity of the product
+        quantity: joi.number().positive().required(), // Quantity
       })
     )
     .min(1)
-    .required(), // At least one product in the order
+    .required(), // At least one product
+
   status: joi
     .string()
     .valid("pending", "shipped", "delivered", "cancelled")
-    .required(), // Enum for order status
-  totalPrice: joi.number().positive().required(), // Total price of the order
-  shippingAddress: joi.string().required(), // Shipping address required
+    .required(),
+
+  totalPrice: joi.number().positive().required(),
+
+  shippingAddress: joi.string().required(),
+
   paymentStatus: joi
     .string()
     .valid("pending", "completed", "failed")
-    .default("pending"), // Payment status with default
+    .default("pending"),
+
+  payment: joi
+    .object({
+      method: joi
+        .string()
+        .valid("khalti", "esewa", "stripe", "cod")
+        .required(),
+      transactionId: joi.string().optional(),
+      paidAt: joi.date().optional(),
+    })
+    .required(), // 🛑 This is required by your Mongoose schema
 });
 
 function OrderValidation(req, res, next) {
-  const { error } = orderSchema.validate(req.body);
+  const { error } = orderSchema.validate(req.body, { abortEarly: false });
 
   if (error) {
-    return res.status(400).json({ error: error.details[0].message });
+    return res
+      .status(400)
+      .json({ message: "Validation Error", details: error.details });
   }
 
   next();

@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const Product = require("../model/product");
+
 const orderSchema = new mongoose.Schema(
   {
     customer: {
@@ -38,6 +38,19 @@ const orderSchema = new mongoose.Schema(
       enum: ["pending", "completed", "failed"],
       default: "pending",
     },
+    payment: {
+      method: {
+        type: String,
+        enum: ["khalti", "esewa", "stripe", "cod"],
+        required: true,
+      },
+      transactionId: {
+        type: String,
+      },
+      paidAt: {
+        type: Date,
+      },
+    },
     orderDate: {
       type: Date,
       default: Date.now,
@@ -46,6 +59,4 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Order = mongoose.model("Order", orderSchema);
-
-module.exports = Order;
+module.exports = mongoose.model("order", orderSchema);
