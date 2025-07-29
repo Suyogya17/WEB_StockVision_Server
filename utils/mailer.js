@@ -87,3 +87,21 @@ exports.sendResetPasswordEmail = async (email, resetUrl) => {
 
   await transporter.sendMail(mailOptions);
 };
+exports.sendOrderConfirmationEmail = async (to, order, isPaid = false) => {
+  const paymentLine = isPaid ? `<p><strong>Payment Status:</strong> Completed via Khalti</p>` : `<p><strong>Payment Status:</strong> Pending</p>`;
+  
+  const html = `
+    <h3>Order Confirmation</h3>
+    <p>Thank you for your order.</p>
+    <p><strong>Order ID:</strong> ${order._id}</p>
+    <p><strong>Total Price:</strong> Rs. ${order.totalPrice}</p>
+    ${paymentLine}
+    ...
+  `;
+
+  await transporter.sendMail({
+    to,
+    subject: isPaid ? "Payment Received - Order Confirmation" : "Order Confirmation",
+    html,
+  });
+};
